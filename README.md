@@ -22,7 +22,7 @@ npm view vue versions
 vue inspect > output.js
 ```
 
-- vue-tools 
+- vue-devtools 
 
   谷歌插件[Vue.js devtools](https://chrome.google.com/webstore/detail/vuejs-devtools/ljjemllljcmogpfapbkkighbhhppjdbg?utm_source=chrome-ntp-icon)，注意beta版才支持vue3(vuex不支持)，以前的只支持vue2
 
@@ -48,22 +48,28 @@ const vm = new Vue().$mount('#app');
 - 事件修饰符，支持链式使用，passive和prevent冲突，不能同时绑定在一个监听器上
 
 ```vue
-/** 
-.capture (捕获事件，父套子) 
+<!-- 
+.capture (捕获事件，父捕获子) 
 .stop (阻止事件冒泡，子冒泡父) 
+w3c的方法是e.stopPropagation()，IE则是使用e.cancelBubble = true
+document.addEventListener(event, function, useCapture=false)
 .self (event.target是当前操作元素才触发事件，避免捕获和冒泡事件触发) 
-.prevent (阻止默认事件) 
+
+.prevent (阻止默认事件，e.preventDefault()，如a标签默认跳转) 
 .once (只触发一次) 
-.passive (事件的默认行为立刻执行，无需等待事件回调执行完毕，如@scoll，@touchmove，@wheel防止页面卡顿) **/
-<div @wheel.passive="wheel"></div>
+.passive (事件的默认行为立刻执行，无需等待事件回调执行完毕，如@scoll，@touchmove，@wheel防止页面卡顿)
+ -->
+<div @scroll.passive="scroll"></div><!-- up、down或按住滚动条滚动 -->
+<div @wheel.passive="wheel"></div><!-- 鼠标滚轮 -->
 ```
 
 - 键盘修饰符，Vue默认提供以下9个按键别名，未提供的可以用按键原始的key值去绑定，如 caps-lock(短横线命名)
 
 ```js
 /**
+ 正常配合keyup使用
 .enter：回车键
-.tab：制表键
+.tab：制表键  特殊，需要配合keydown
 .delete：含delete和backspace键
 .esc：返回键
 .space: 空格键
@@ -79,13 +85,13 @@ const vm = new Vue().$mount('#app');
   1. 配合keyup使用，需要组合键释放了才能触发，例如ctrl+a
 
      ```vue
-     <div @keyup.ctrl="handler"></div>
+     <div @keyup.ctrl="handler"></div> <!-- 不会正常触发 -->
      <div @keyup.ctrl.a="handler"></div>
      ```
 
   2. 配合keydown正常使用
 
-- 自定义键名，Vue.config.keyCodes.自定义键名(huiche) = 键码 （不推荐）
+- 自定义键名，Vue.config.keyCodes.自定义键名(huiche) = 键码 （跟编码@keyup.13一样不推荐，语义化不清晰和浏览器编码不一定保持一致）
 
 - v-model修饰符
 
@@ -101,26 +107,26 @@ const vm = new Vue().$mount('#app');
   <el-input v-model="form.name" placeholder="昵称" @keyup.enter.native="submit"></el-input>
   <!-- 会把click事件当成自定义事件，需要$emit('click')来触发 -->
   <my-component @click='handler'></my-component>
-  <!-- 会把click事件当成原生事件 -->
+  <!-- 会把click事件当成原生事件，vue3取消了.native -->
   <my-component @click.native='handler'></my-component>
   ```
 
 ## 过滤器
 
-- 定义：对要显示的数据进行特定格式式再显示（适用于一些简单逻辑的处理）
+- 定义：对要显示的数据进行特定格式式再显示（适用于一些简单逻辑的处理）,vue3取消了，推荐用方法或计算属性实现
 
 - 语法：
 
   1. 注册过滤器：
 
      ```js
-     Vue.filter(name, callback) 或 new Vue({ filters: {} })
+     Vue.filter(name, callback) 或 vc组件实例对象 { filters: {} }
      ```
 
   2. 使用过滤器：
 
      ```js
-     {{ xxx | 过滤器名 }} 或 v-bind:属性="xxx | 过滤器名"
+     {{ xx | 过滤器1 | 过滤器2() }} 或 v-bind:属性="xx | 过滤器名()"
      ```
 
 - 备注：
@@ -136,7 +142,7 @@ const vm = new Vue().$mount('#app');
 
 - 不仅能传递数据，也能传递方法(不推荐)
 
-  1. 自定义事件 @eventName=handler <--> $emit('eventName') 
+  1. 自定义事件(除了click、keyup、keydown外) @eventName=handler <--> $emit('eventName') ,如在子组件绑定自定义事件，就由子组件来$emit派发，回调写在父组件的handler方法上
 
      ```js
      // 哪个vc $emit就由哪个vc解绑$off
@@ -149,9 +155,9 @@ const vm = new Vue().$mount('#app');
      this.$destroy() 
      ```
 
-  2. this.$refs.vc.$on('eventName', function(){ console.log(this) }) 
+  2. this.$refs.childVc.$on('eventName', function(){ console.log(this) }) 灵活处理绑定时机
 
-     谁派发谁监听，注意function里面的this指向this.$refs.vc，而不是指向当前写这行代码的vc组件实例。记住谁触发了自定义事件，事件回调当中的this就指向谁。 改写成：this.$refs.vc.$on('eventName', () => {}) 
+     谁派发谁监听，注意function里面的this指向this.$refs.childVc，而不是指向当前写这行代码的vc父组件实例。记住谁触发了自定义事件，事件回调当中的this就指向谁。 改写成：this.$refs.vc.$on('eventName', () => {}) 
 
 - $attrs与$listeners
 
@@ -195,7 +201,7 @@ const vm = new Vue().$mount('#app');
 document.cookie // 只显示非http-only的 
 ```
 
-## v-cloak
+## 指令
 
 - v-cloak指令（没有值）:
   1. 本质是一个特殊属性，Vue实例创建完比并接管容器后，会删掉v-cloak属性
@@ -204,13 +210,14 @@ document.cookie // 只显示非http-only的
   1. 指令与元素成功绑定时
   2. 指令所在的模板被重新解析时（任意数据变化）
 - 注意：
-  1. 指令函数无法使用data数据，它的this是指向window
+  1. 指令函数无法使用data数据，它的this是指向window，可以考虑把data某个属性传参进去，如果考虑的是数据传递，可以考虑借助dataset方式传递
   2. 指令名如果是多个单词，要使用kebab-case(短横线)命名方式，不要用camelCase(小驼峰)命名方式（注意：定义组件名称(属性)也建议用kebab-case，大写组件名(属性)必须vue-cli脚手架才行，直接引入vue不行，自闭合组件标签同理，多个只会渲染一个）
   3. 其它自带指令：v-once(只渲染一次)、v-pre(跳过编译)
 
 ```scss
 [v-cloak] {
-	display: none;
+	display: none; // 常规配套使用
+  visibility: hidden;
 }
 ```
 
@@ -219,11 +226,12 @@ document.cookie // 只显示非http-only的
 // <input type="text" v-fbing:value="n">
 
 directives: {
-  // 指令函数，有bind和update效果
+  // 1.指令函数，有bind和update效果
 	big(element, binding) {
 		element.innerText = binding.value * 10
 	}
-  // 指令对象
+  
+  // 2.指令对象
 	fbing: {
     // 指令与元素成功绑定时
 		bind(element, binding) {
@@ -247,12 +255,12 @@ directives: {
 - 作用：让父组件可以向子组件指定位置插入html结构，也是一种组件间通信的方式，适用于 父组件  ===> 子组件
 
 ```vue
-<!-- 分类组件 -->
+<!-- category分类组件 -->
 <template>
 	<div class="category">
     <h3>{{title}}分类</h3>
     <!-- 定义一个默认插槽 -->
-    <slot :test="test" msg="handsome boy"> <!-- 给作用域插槽传递一个公共数据test -->
+    <slot :test="test" msg="handsome boy"> <!-- 给作用域插槽传递一个公共数据test、msg -->
       <span>我是默认显示值</span>
   	</slot>
     <!-- 定义一个具名插槽 footer -->
@@ -276,7 +284,7 @@ export default {
   }
 </style>
 
-<!-- 父组件 -->
+<!-- 父组件，里面引用了category分类组件 -->
 <template>
 	<category title="默认显示">
     <!-- 会默认绑定在vc上的$slots，即使组件内部没有定义slot -->
@@ -1091,4 +1099,6 @@ app.listen(5005, (err) => {
   }
 }
 ```
+
+
 
