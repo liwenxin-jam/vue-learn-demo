@@ -1,6 +1,8 @@
 # vue-learn-demo
 ## vue2 and vue3 学习记录项目
 
+## Vue的“旁门左道”
+
 基于[【尚硅谷】Web前端迅速上手Vue教程丨vue3.0入门到精通](https://www.bilibili.com/video/BV1Zy4y1K7SH)，记录相关知识点，达到备忘录的目的
 
 ## 风格指南
@@ -26,8 +28,7 @@ vue inspect > output.js
 
   谷歌插件[Vue.js devtools](https://chrome.google.com/webstore/detail/vuejs-devtools/ljjemllljcmogpfapbkkighbhhppjdbg?utm_source=chrome-ntp-icon)，注意beta版才支持vue3(vuex不支持)，以前的只支持vue2
 
-  1. 开启允许访问文件网址
-  2. 收集各项错误
+  1. 开启允许访问文件网址（支持本地调试）
 
 ## vm与vc
 
@@ -42,6 +43,105 @@ const vm = new Vue({
 })
 const vm = new Vue().$mount('#app');
 ```
+
+## 指令
+
+- v-html
+
+  - 指令作用：向指定节点中渲染包含html结构的内容
+
+  - 与插值语法的区别：
+
+    a. v-html会替换掉节点中所有的内容，{{xxx}}不会
+
+    b. v-html可以识别html结构，区别v-text指令
+
+  - 注意：v-html有安全性问题
+
+    a. 在网站上动态渲染任意HTML是非常危险的，容易导致XSS攻击
+
+    b. 一定要在可信的内容上使用v-html，永不要用在用户提交的内容上！
+
+  - [Cookie-Editor](https://chrome.google.com/webstore/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm?utm_source=chrome-ntp-icon)
+
+  ```js
+  document.cookie // 只显示非http-only的 
+  ```
+
+- v-cloak指令（没有值）:
+
+  1. 本质是一个特殊属性，Vue实例创建完比并接管容器后，会删掉v-cloak属性
+  2. 使用css配合v-cloak可以解决网速慢时页面展示出{{xxx}}的问题
+
+- 指令函数何时会被调用？（区别指令对象不同函数时机）
+
+  1. 指令与元素成功绑定时
+  2. 指令所在的模板被重新解析时（任意数据变化）
+
+- 注意：
+
+  1. 指令函数无法使用data数据，它的this是指向window，可以考虑把data某个属性传参进去，如果考虑的是数据传递，可以考虑借助dataset方式传递
+  2. 指令名如果是多个单词，要使用kebab-case(短横线)命名方式，不要用camelCase(小驼峰)命名方式（注意：定义组件名称(属性)也建议用kebab-case，大写组件名(属性)必须vue-cli脚手架才行，直接引入vue不行，自闭合组件标签同理，多个只会渲染一个）
+  3. 其它自带指令：v-once(只渲染一次)、v-pre(跳过编译)
+
+```scss
+[v-cloak] {
+	display: none; // 常规配套使用
+  visibility: hidden;
+}
+```
+
+```js
+// <span v-big='n'></span>
+// <input type="text" v-fbing:value="n">
+
+directives: {
+  // 1.指令函数，有bind和update效果
+	big(element, binding) {
+		element.innerText = binding.value * 10
+	}
+  
+  // 2.指令对象
+	fbing: {
+    // 指令与元素成功绑定时
+		bind(element, binding) {
+      element.value = binding.value
+    }
+    // 指令所在元素被插入页面时，需要在此阶段做特殊处理
+		inserted(element, binding) {
+      element.focus()
+    }
+    // 指令所在的模板被重新解析时（任意数据变化）
+		update(element, binding) {}
+	}
+}
+// 全局指令
+// Vue.directive('fbing', function() {})  
+// Vue.directive('fbing', { })  
+```
+
+## 过滤器
+
+- 定义：对要显示的数据进行特定格式式再显示（适用于一些简单逻辑的处理）,vue3取消了，推荐用方法或计算属性实现
+
+- 语法：
+
+  1. 注册过滤器：
+
+     ```js
+     Vue.filter(name, callback) 或 vc组件实例对象 { filters: {} }
+     ```
+
+  2. 使用过滤器：
+
+     ```js
+     {{ xx | 过滤器1 | 过滤器2() }} 或 v-bind:属性="xx | 过滤器名()"
+     ```
+
+- 备注：
+
+  1. 过滤器也可以接收额外参数、多个过滤器也可以串联
+  2. 并没有改变原本的数据，是产生新的对应的数据
 
 ## 修饰符
 
@@ -111,29 +211,6 @@ document.addEventListener(event, function, useCapture=false)
   <my-component @click.native='handler'></my-component>
   ```
 
-## 过滤器
-
-- 定义：对要显示的数据进行特定格式式再显示（适用于一些简单逻辑的处理）,vue3取消了，推荐用方法或计算属性实现
-
-- 语法：
-
-  1. 注册过滤器：
-
-     ```js
-     Vue.filter(name, callback) 或 vc组件实例对象 { filters: {} }
-     ```
-
-  2. 使用过滤器：
-
-     ```js
-     {{ xx | 过滤器1 | 过滤器2() }} 或 v-bind:属性="xx | 过滤器名()"
-     ```
-
-- 备注：
-
-  1. 过滤器也可以接收额外参数、多个过滤器也可以串联
-  2. 并没有改变原本的数据，是产生新的对应的数据
-
 ## props
 
 - 单向数据流
@@ -178,77 +255,6 @@ document.addEventListener(event, function, useCapture=false)
     </grandson>
   </template>
   ```
-
-## v-html
-
-- 指令作用：向指定节点中渲染包含html结构的内容
-
-- 与插值语法的区别：
-
-  a. v-html会替换掉节点中所有的内容，{{xxx}}不会
-
-  b. v-html可以识别html结构，区别v-text指令
-
-- 注意：v-html有安全性问题
-
-  a. 在网站上动态渲染任意HTML是非常危险的，容易导致XSS攻击
-
-  b. 一定要在可信的内容上使用v-html，永不要用在用户提交的内容上！
-
-- [Cookie-Editor](https://chrome.google.com/webstore/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm?utm_source=chrome-ntp-icon)
-
-```js
-document.cookie // 只显示非http-only的 
-```
-
-## 指令
-
-- v-cloak指令（没有值）:
-  1. 本质是一个特殊属性，Vue实例创建完比并接管容器后，会删掉v-cloak属性
-  2. 使用css配合v-cloak可以解决网速慢时页面展示出{{xxx}}的问题
-- 指令函数何时会被调用？（区别指令对象不同函数时机）
-  1. 指令与元素成功绑定时
-  2. 指令所在的模板被重新解析时（任意数据变化）
-- 注意：
-  1. 指令函数无法使用data数据，它的this是指向window，可以考虑把data某个属性传参进去，如果考虑的是数据传递，可以考虑借助dataset方式传递
-  2. 指令名如果是多个单词，要使用kebab-case(短横线)命名方式，不要用camelCase(小驼峰)命名方式（注意：定义组件名称(属性)也建议用kebab-case，大写组件名(属性)必须vue-cli脚手架才行，直接引入vue不行，自闭合组件标签同理，多个只会渲染一个）
-  3. 其它自带指令：v-once(只渲染一次)、v-pre(跳过编译)
-
-```scss
-[v-cloak] {
-	display: none; // 常规配套使用
-  visibility: hidden;
-}
-```
-
-```js
-// <span v-big='n'></span>
-// <input type="text" v-fbing:value="n">
-
-directives: {
-  // 1.指令函数，有bind和update效果
-	big(element, binding) {
-		element.innerText = binding.value * 10
-	}
-  
-  // 2.指令对象
-	fbing: {
-    // 指令与元素成功绑定时
-		bind(element, binding) {
-      element.value = binding.value
-    }
-    // 指令所在元素被插入页面时，需要在此阶段做特殊处理
-		inserted(element, binding) {
-      element.focus()
-    }
-    // 指令所在的模板被重新解析时（任意数据变化）
-		update(element, binding) {}
-	}
-}
-// 全局指令
-// Vue.directive('fbing', function() {})  
-// Vue.directive('fbing', { })  
-```
 
 ## 插槽
 
@@ -382,7 +388,7 @@ export default Vuex.Stroe({
   // 用于响应组件中的动作，常用于共用复杂业务和异步操作
   actions: {}, // 方法名建议小驼峰
   // 用于同步操作数据(state)，在devtool追踪数据变化
-  mutations: {}, // 方法名建议大驼峰，区别actions中的方法
+  mutations: {}, // 方法名建议大驼峰或者全大写(下划线隔开)，区别actions中的方法
   // 子模块数据，里面结构跟根节点保持一致，即同样拥有state、mutations...
   modules: {
     // otherOptions,
@@ -406,6 +412,7 @@ export default Vuex.Stroe({
       ...mapState({ key: 'stateName' }),
       // 第二种写法，数组简写形式
       ...mapState(['stateName']),
+        
       // 同理mapState
       ...mapGetters({ key: 'gettersName' }),
       ...mapGetters(['gettersName']),
@@ -419,7 +426,7 @@ export default Vuex.Stroe({
   
   		// 子模块a
   		...mapState(['a']),
-      // 借助命名空间访问
+      // 借助命名空间namespaced访问
       ...mapState('a', ['stateName1', 'stateName2']),
       ...mapState('b', ['stateName1', 'stateName2']),
       ...mapMutations('a', { funcName: 'MutationFuncName' }),
@@ -428,7 +435,7 @@ export default Vuex.Stroe({
       test() {
         console.log(this.$store)
         this.$store.stateName1
-        // 子模块
+        // 子模块 获取state某个数据
         this.$store.a.stateName1
         // 注意getters会跟state有所区别
         this.$store.getters['a/getterName']
@@ -734,6 +741,287 @@ export default {
 
   4. nginx (反向代理)
 
+## Vue3
+
+- 实例化
+
+```js
+// vue2是Vue构造函数，vue3是createApp的工厂函数
+import { createApp } from 'vue'
+import App from './App.vue'
+
+// vue2是 new Vue({ render: h => h(App) }).$mount('#app')
+createApp(App).mount('#app') // 创建应用实例对象 vm
+```
+
+- Composition API(组合式API)
+
+```vue
+<template>
+  <!-- vue3支持多个根节点 fragment -->
+  <div>Hello，Vue3!</div>
+  <div>{{ name }}</div>
+</template>
+
+<script>
+  import { h, ref, reactive, computed, watch, watchEffect } from 'vue'
+  
+  export default {
+    // setup接收参数必须先定义
+    props: ['msg'],
+    // setup中的context.emit触发自定义事件必须先声明，不声明当成是原生事件，如click
+    emits: ['callback'],
+    // 尽量不要与vue2.x配置混用，这里支持写data、methdos、computed
+    // vue2方法里能访问setup配置的属性，setup无法访问vue2的属性
+    // 如果有重名，setup优先
+    // setup不能是一个async函数，因为返回的不再是一个对象，而是一个promise，模板看不到return对象中的属性，可以借助动态加载组件 + suspense可以做到
+    // 在beforeCreate之前执行，setup里面的this是undefined
+    setup(props, context) { // context支持解构{ attrs,emit,slots }
+      
+      // 生命周期钩子 销毁 <--> 卸载
+      // vue2 beforeCreate、created、beforeMount、mounted、beforeUpdate、updated、beforeDestroy、destroyed 
+      // composition API是括号内的对应关系
+      // vue3 beforeCreate(setup)、created(setup)、beforeMount(onBeforeMount)、mounted(onMounted)、beforeUpdate(onBeforeUpdate)、updated(onUpdated)、beforeUnmount(onBeforeUnmount)、unmounted(onUnmounted)
+      
+      // 如果需要写异步接口，建议用箭头函数包装多一层
+      const func = async () => {
+        const { data } = await apiFunc()
+      }
+      
+      // 简单类型 name是RefImpl 引用对象 get set
+      let name = ref('xx');
+      // 在js中修改需要 .value
+      name.value = 'handsome boy'
+      
+      // 复杂类型 info是RefImpl 而info.value是Proxy引用对象(内部借助reactive) 
+      let info = ref({ name: 'xx' });
+      info.value.name = 'handsome boy'
+      
+      // 不支持简单类型reactive(666)，通过Proxy代理数据劫持，再通过Reflect反射源对象
+      let info = reactive(['a', 'b', 'c']);
+      // vue2无法监测到响应式，需要借助this.$set(info, 0, 'aa')
+      info[0] = 'aa';
+      
+      // 计算属性，简写形式，支持分开写 get(){} 和 set(){}
+      let fullName = computed(() => {
+        return person.firstName + person.lastName;
+      })
+      
+      // 监听属性,接收4种类型(ref、reactive、array、function) 
+      // let name = ref(name) 此外监听不需要name.value
+      watch(name, (newVal, oldVal) => {
+      },{ immediate: true, deep: true })
+      // 同时监听多个，newVal和oldVal是一个数组
+      watch([a, b], (newVal, oldVal) => {
+      })
+      // 监听ref能够正常，监听reactive是引用类型无法正常(新旧地址一致，且deep失效)
+      watch(state, (newVal, oldVal) => {
+      },{ deep: true })
+      watch(() => state.age, (newVal, oldVal) => {})
+      watch([() => state.age], (newVal, oldVal) => {})
+      // 监听对象中的某个属性需要开启深度监听，但依旧无法真正获取真正的oldVal，let obj = ref({})同理
+      watch(() => state.obj, (newVal, oldVal) => {},{deep:true})
+      
+      // 有点类似computed原理，里面用到哪些响应式数据，当它们改变时就会触发，但不需要返回值
+      watchEffect(() => {
+        if (state.status) {
+          // do something
+        }
+      })
+      
+      // hooks，类似vue2的mixin
+      // useMousePosition.ts
+      import { onBeforeUnmount, onMounted, ref } from 'vue
+      export default function () {
+        const x = ref(-1) ; // x 绑定为响应式数据
+        const y = ref(-1);
+        const clickHandler=(event:MouseEvent)=>{
+          x.value = event.pageX
+          y.value = event.pageY
+        } 
+        onMounted(()=>{
+          window.addEventListener('click', clickHandlker)
+        })
+        onBeforeUnmount(()=>{
+          window.removeEventListner('click', clickHandler)
+        })
+        return {
+          x,
+          y
+        }
+       }
+      
+      import useMousePosition from './hooks/useMousePosition'
+			export default {
+        setup() {
+          // 这里就用了 hooks 函数, 从而提高了复用性
+          const {x, y} = useMousePosition() 
+
+          return {
+            x,
+            y,
+          }
+        }
+      }
+      
+      // toRef、toRefs
+      let person = reactive({
+        name: 'xx',
+        age: 18
+      })
+      const name1 = person.name; // xx
+      // 作用：toRef创建一个ref对象，其value值指向另一个对象中的某个属性
+      // 应用：要将响应式对象中的某个属性单独提供给外部使用时
+      const name2 = toRef(person, 'name'); // ObjectRefImpl
+      
+      // 浅层次(第一层)数据的响应式
+      // 应用：如果有一个对象数据，结构比较深，但变化时只是外层属性变化
+      let person = shallowReactive({
+        name: 'xx',
+        age: 18,
+        info: {
+          name: 'xx',
+        	age: 18,
+        }
+      })
+      
+      // 传递普通类型跟ref没区别，如果传递的是一个对象，无法实时响应对象的值，person.value是普通对象(非proxy)
+      // 应用：如果有一个对象数据，后续功能不会修改该对象中的属性，而是生成新的对象来替换
+      let person = shallowRef({
+        name: 'xx',
+      })
+      
+      // readonly(深只读)不允许修改属性，shallReadonly(浅只读)允许修改嵌套属性(非根属性)
+      let person = readonly(reactive({
+        name: 'xx',
+        info: {
+          name: 'xx',
+        }
+      }))
+      
+      // toRaw把响应式对象reactive处理成普通对象，没法处理ref
+      state = toRaw(state)
+      // markRaw，标记一个对象，不再是一个响应式对象
+      // 应用：当渲染具有不可变数据源的大列表时，跳过响应式转换提高性能
+      state.info = markRaw(state.info)
+      
+      // 创建一个自定义的ref(精装修与毛坯customRef)，并对其依赖项跟踪和更新触发进行显式控制
+      const myRef(value, delay = 500) {
+        let timer
+        // customRef(value) === ref(value)
+        return customRef((track, trigger) => {
+          return {
+            get() {
+              // 通知Vue追踪value的变化
+              track();
+              return value;
+            },
+            set(newValue) {
+              clearTimeout(timer)
+              timer = setTimeout(() => {
+                value = newValue;
+                // 通知Vue去重新解析模板
+                trigger();
+              }, delay);
+            },
+          }
+        })
+      }
+      let testMyRef = myRef('hello')
+      
+      // provide与inject 适用于祖与后代(跨级)组件间通信
+      provide('car', car); // 给自己的后代组件传递数据
+      // car是响应式，接收到的也是响应式，使用inject必须先provide
+      let car = inject('car')
+      
+      // 响应式数据的判断
+      isRef：检查一个值是否为一个ref对象
+      isReactive：检查一个对象是否是由reactive创建的响应式代理
+      isReadonly：检查一个对象是否是由readonly创建的只读代理
+      isProxy：检查一个对象是否由reactive或者readonly方法创建的代理
+      
+      // 常用，返回一个对象，则对象中的属性、方法在模板中均可以直接使用
+      return { 
+        // toRefs与toRef功能一致，但可以批量创建多个ref对象
+        toRefs(person),
+        name
+      }
+      
+      // 返回一个渲染函数，会覆盖template结构
+      return () => h('h1', 'handsome boy')
+    }
+  }
+</script>
+```
+
+- 新的组件
+
+  - Fragment
+
+    - 在Vue2中：组件必须有一个根标签
+    - 在Vue3中：组件可以没有根标签，内部会将多个标签包含在一个Fragment虚拟元素中
+    - 好处：减少标签层级，减小内存占用
+
+  - Teleport(传送)
+
+  - Suspense
+
+    - 等待异步组件时渲染一些额外内容，让应用有更好的用户体验，底层也是两个插槽，一个用来展示异步加载内容还没回来的时候，一个用来展示真正要显示的内容
+
+    1. 使用defineAysncComponent异步引入组件
+    2. 使用suspense包裹组件，并配置好default与fallback
+
+    ```vue
+    <!-- 父组件 -->
+    <template>
+    	<Suspense>
+        <template v-slot:default>
+          <child />
+        </template>
+        <template v-slot:fallback>
+          <h3>稍等，加载中...</h3>
+        </template>
+    	</Suspense>
+    </template>
+    
+    <script>
+    // import Child from './components/child' // 静态引入
+    import { defineAsyncComponent } from 'vue'
+    const Child = defineAsyncComponent(()=>import('./components/child') // 动态(异步)引入
+                                       
+    export default {
+    	components: { Child },                                   
+    }
+    </script>
+    
+    <!-- child组件 -->
+    <template>
+    	<div class="child">
+        <h3>我是Child组件</h3>
+        {{ sum }}
+      </div>
+    </template>
+    
+    <script>
+    import { ref } from 'vue'
+                                       
+    export default {
+      // 借助Suspense和异步引入组件，可以async
+    	async setup() {
+        let sum = ref(0)
+        let p = new Promise((resolve, reject)=>{
+          setTimeout(()=>{ resolve({ sum })}, 1000)
+        })
+        return await p
+      }                                  
+    }
+    </script>
+    ```
+
+- vue2迁移vue3改变
+
+  - [官网](https://v3.cn.vuejs.org/guide/migration/introduction.html#%E6%A6%82%E8%A7%88)
+
 ## v-for中的key的有什么作用？
 
 - 虚拟DOM中key的作用:
@@ -831,7 +1119,7 @@ const ob = new Proxy(obj, {
 
    ​	vm.$set(target, propertyName/index, value)
 
-3. 如何监测数据中的数据？
+3. 如何监测数组中的数据？
 
    通过包裹数组更新元素的方法实现，本质就是做了两件事：
 
@@ -861,215 +1149,17 @@ const vm = new Vue({
 
 this.$set(vm, 'age', 20);  // error
 this.$set(vm.data, 'age', 20);  // error
-this.$set(vm.data.info, 'age', 20);  // error
+this.$set(vm.data.info, 'age', 20);  
 // 数组对象，Object.defineProperty，有get set
 vm.data.arrInfo[0].name = 'jam';
 // 直接通过下标修改数组，界面不会自动更新
 vm.data.arrInfo[0] = { name: 'jam' }; // 不能实时响应
 // 如果需要唯一ID，可以借助nanoid库，生成的是21位唯一值
 
-// 数组包装劫持7个原型方法，push、pop、unshift、shift、splice、sort、reverse能够监测到数组数据变化
+// 数组包装劫持7个原型的变更方法，push、pop、unshift、shift、splice、sort、reverse能够监测到数组数据变化
 vm.data.arr[0] = '饿肚子'; // 不能实时响应
 vm.data.arr.splice(0, 1, { name: 'jam' }); // 能实时响应
 ```
-
-## Vue3
-
-- 实例化
-
-```js
-// vue2是Vue构造函数，vue3是createApp的工厂函数
-import { createApp } from 'vue'
-import App from './App.vue'
-
-// vue2是 new Vue({ render: h => h(App) }).$mount('#app')
-createApp(App).mount('#app') // 创建应用实例对象 vm
-```
-
-- Composition API(组合式API)
-
-```vue
-<template>
-  <!-- vue3支持多个根节点 -->
-	<div>Hello，Vue3!</div>
-  <div>{{ name }}</div>
-</template>
-
-<script>
-  import { h, ref, reactive, computed, watch, watchEffect } from 'vue'
-  
-  export default {
-    // setup接收参数必须先定义
-    props: ['msg'],
-    // setup中的context.emit触发自定义事件必须先声明，不声明当成是原生事件，如click
-    emits: ['callback'],
-    // 尽量不要与vue2.x配置混用，这里支持写data、methdos、computed
-    // vue2方法里能访问setup配置的属性，setup无法访问vue2的属性
-    // 如果有重名，setup优先
-    // setup不能是一个async函数，因为返回的不再是一个对象，而是一个promise，模板看不到return对象中的属性
-    // 在beforeCreate之前执行，this是undefined
-    setup(props, context) { // context支持解构{ attrs,emit,slots }
-      
-      // 生命周期钩子 销毁 <--> 卸载
-      // vue2 beforeCreate、created、beforeMount、mounted、beforeUpdate、updated、beforeDestroy、destroyed 
-      // composition API是括号内的对应关系
-      // vue3 beforeCreate(setup)、created(setup)、beforeMount(onBeforeMount)、mounted(onMounted)、beforeUpdate(onBeforeUpdate)、updated(onUpdated)、beforeUnmount(onBeforeUnmount)、unmounted(onUnmounted)
-      
-      // 如果需要写异步接口，建议用箭头函数包装多一层
-      const func = async () => {
-        const { data } = await apiFunc()
-      }
-      
-      // 简单类型 name是RefImpl 引用对象 get set
-      let name = ref('xx');
-      // 在js中修改需要 .value
-      name.value = 'handsome boy'
-      
-      // 复杂类型 info是RefImpl 而info.value是Proxy引用对象(内部借助reactive) 
-      let info = ref({ name: 'xx' });
-      info.value.name = 'handsome boy'
-      
-      // 不支持简单类型 reactive(666) 通过Proxy代理数据劫持，再通过Reflect反射源对象
-      let info = reactive(['a', 'b', 'c']);
-      // vue2无法监测到响应式 this.$set(info, 0, 'aa')
-      info[0] = 'aa';
-      
-      // 计算属性，简写形式，支持分开写 get(){} 和 set(){}
-      let fullName = computed(() => {
-        return person.firstName + person.lastName;
-      })
-      
-      // 监听属性,接收4种类型(ref、reactive、array、function) 
-      // let name = ref(name) 此外不需要name.value
-      watch(name, (newVal, oldVal) => {
-      },{ immediate: true, deep: true })
-      // 同时监听多个，newVal和oldVal是一个数组
-      watch([a, b], (newVal, oldVal) => {
-      })
-      // 监听ref能够正常，监听reactive是引用类型无法正常(新旧地址一致，且deep失效)
-      watch(state, (newVal, oldVal) => {
-      },{ deep: true })
-      watch(() => state.age, (newVal, oldVal) => {})
-      watch([() => state.age], (newVal, oldVal) => {})
-      // 监听对象中的某个属性需要开启深度监听，但依旧无法真正获取真正的oldVal，let obj = ref({})同理
-      watch(() => state.obj, (newVal, oldVal) => {},{deep:true})
-      
-      // 有点类似computed原理，里面用到哪些响应式数据，当它们改变时就会触发，但不需要返回值
-      watchEffect(() => {
-        
-      })
-      
-      // hooks，类似vue2的mixin
-      
-      // toRef、toRef
-      let person = reactive({
-        name: 'xx',
-        age: 18
-      })
-      const name1 = person.name; // xx
-      // 作用：toRef创建一个ref对象，其value值指向另一个对象中的某个属性
-      // 应用：要将响应式对象中的某个属性单独提供给外部使用时
-      const name2 = toRef(person, 'name'); // ObjectRefImpl
-      
-      // 浅层次(第一层)数据的响应式
-      // 应用：如果有一个对象数据，结构比较深，但变化时只是外层属性变化
-      let person = shallowReactive({
-        name: 'xx',
-        age: 18,
-        info: {
-          name: 'xx',
-        	age: 18,
-        }
-      })
-      
-      // 传递普通类型跟ref没区别，无法实时响应对象的值，person.value是普通对象
-      // 应用：如果有一个对象数据，后续功能不会修改该对象中的属性，而是生成新的对象来替换
-      let person = shallowRef({
-        name: 'xx',
-      })
-      
-      // readonly深只读不允许修改属性，shallReadonly浅只读，允许修改嵌套属性(非根属性)
-      let person = readonly(reactive({
-        name: 'xx',
-        info: {
-          name: 'xx',
-        }
-      }))
-      
-      // toRaw把响应式对象reactive处理成普通对象，没法处理ref
-      state.name = toRaw(state.name)
-      // markRaw，标记一个对象，不再是一个响应式对象
-      // 应用：当渲染具有不可变数据源的大列表时，跳过响应式转换提高性能
-      state.info = toRaw(state.info)
-      
-      // 创建一个自定义的ref(精装修与毛坯customRef)，并对其依赖项跟踪和更新触发进行显式控制
-      const myRef(value, delay = 500) {
-        let timer
-        // customRef(value) === ref(value)
-        return customRef((track, trigger) => {
-          return {
-            get() {
-              // 通知Vue追踪value的变化
-              track();
-              return value;
-            },
-            set(newValue) {
-              clearTimeout(timer)
-              timer = setTimeout(() => {
-                value = newValue;
-                // 通知Vue去重新解析模板
-                trigger();
-              }, delay);
-            },
-          }
-        })
-      }
-      
-      // provide与inject 适用于祖与后代(跨级)组件间通信
-      provide('car', car); // 给自己的后代组件传递数据
-      // car是响应式，接收到的也是响应式，使用inject必须先provide
-      let car = inject('car')
-      
-      // 响应式数据的判断
-      isRef：检查一个值是否为一个ref对象
-      isReactive：检查一个对象是否是由reactive创建的响应式代理
-      isReadonly：检查一个对象是否是由readonly创建的只读代理
-      isProxy：检查一个对象是否由reactive或者readonly方法创建的代理
-      
-      // 常用，返回一个对象，则对象中的属性、方法在模板中均可以直接使用
-      return { 
-        // toRefs与toRef功能一致，但可以批量创建多个ref对象
-        toRefs(person),
-        name
-      }
-      
-      // 返回一个渲染函数，会覆盖template结构
-      return () => h('h1', 'handsome boy')
-    }
-  }
-</script>
-```
-
-## 新的组件
-
-- Fragment
-
-  - 在Vue2中：组件必须有一个根标签
-  - 在Vue3中：组件可以没有根标签，内部会将多个标签包含在一个Fragment虚拟元素中
-  - 好处：减少标签层级，减小内存占用
-
-- Teleport(传送)
-
-- Suspense
-
-  - 等待异步组件时渲染一些额外内容，让应用有更好的用户体验，底层也是两个插槽，一个用来展示异步加载内容还没回来的时候，一个用来展示真正要显示的内容
-
-  1. 使用defineAysncComponent异步引入组件
-  2. 使用suspense包裹组件，并配置好default与fallback
-
-## Vue2迁移Vue3改变
-
-- [官网](https://v3.cn.vuejs.org/guide/migration/introduction.html#%E6%A6%82%E8%A7%88)
 
 ## 彩蛋
 
@@ -1099,6 +1189,8 @@ app.listen(5005, (err) => {
   }
 }
 ```
+
+
 
 
 
