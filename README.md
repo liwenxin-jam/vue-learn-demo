@@ -1,8 +1,6 @@
 # vue-learn-demo
 ## vue2 and vue3 学习记录项目
 
-## Vue的“旁门左道”
-
 基于[【尚硅谷】Web前端迅速上手Vue教程丨vue3.0入门到精通](https://www.bilibili.com/video/BV1Zy4y1K7SH)，记录相关知识点，达到备忘录的目的
 
 ## 风格指南
